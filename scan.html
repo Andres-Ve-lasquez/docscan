@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>DocScan - Camara</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; touch-action: manipulation; }
     :root { --accent:#a78bfa; --green:#4ade80; --red:#f87171; --bg:#0f0f13; --card:#1a1a24; --border:#2a2a3a; --muted:#8888aa; }
     body { background:var(--bg); color:#fff; font-family:'Segoe UI',system-ui,sans-serif; min-height:100dvh; display:flex; flex-direction:column; }
 
@@ -479,6 +479,9 @@ async function upload(blob, thumbUrl) {
       addThumb(thumbUrl); setPreview(thumbUrl); updateUI();
       msg('Foto agregada','success');
       origCanvas=null; show('main');
+      // Bloquea el boton PDF 400ms para evitar ghost-click desde la pantalla de revision
+      document.getElementById('btn-pdf').disabled = true;
+      setTimeout(updateUI, 400);
     } else { msg(data.error||'Error al subir','error'); }
   } catch { msg('Error de conexion','error'); }
 }

@@ -6,294 +6,518 @@
   <title>DocScan - Camara</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --accent: #a78bfa;
-      --green:  #4ade80;
-      --red:    #f87171;
-      --bg:     #0f0f13;
-      --card:   #1a1a24;
-      --border: #2a2a3a;
-      --muted:  #8888aa;
-    }
-    body { background: var(--bg); color: #fff; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100dvh; display: flex; flex-direction: column; }
-    header { padding: 0.9rem 1.2rem; background: var(--card); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-    .logo { font-weight: 800; font-size: 1.15rem; background: linear-gradient(135deg, #6ee7f7, #a78bfa); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-    .badge { background: var(--border); border-radius: 20px; padding: 0.25rem 0.75rem; font-size: 0.8rem; color: var(--accent); font-weight: 600; }
-    main { flex: 1; display: flex; flex-direction: column; padding: 1rem; gap: 0.9rem; overflow-y: auto; }
-    #preview-area { background: var(--card); border: 2px dashed var(--border); border-radius: 16px; min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; transition: border-color 0.2s; }
-    #preview-area.has-photo { border-style: solid; border-color: var(--accent); }
-    #last-preview { width: 100%; max-height: 300px; object-fit: contain; border-radius: 14px; display: none; }
-    .placeholder { text-align: center; color: var(--muted); font-size: 0.88rem; padding: 2rem; }
-    .placeholder svg { width: 52px; height: 52px; margin-bottom: 0.75rem; opacity: 0.35; display: block; margin-inline: auto; }
-    #thumbs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; min-height: 70px; align-items: center; scrollbar-width: none; }
-    #thumbs::-webkit-scrollbar { display: none; }
-    .thumb { flex-shrink: 0; width: 62px; height: 62px; border-radius: 10px; object-fit: cover; border: 2px solid var(--border); transition: border-color 0.2s; }
-    .thumb.active { border-color: var(--accent); }
-    .thumbs-empty { color: var(--muted); font-size: 0.8rem; }
-    .btn-row { display: flex; gap: 0.7rem; }
-    .btn { flex: 1; padding: 0.9rem; border: none; border-radius: 14px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.18s; display: flex; align-items: center; justify-content: center; gap: 6px; }
-    .btn:active { transform: scale(0.96); }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .btn-photo { background: linear-gradient(135deg, #6ee7f7, #a78bfa); color: #0f0f13; }
-    .btn-undo { background: var(--card); border: 1px solid var(--border); color: var(--muted); flex: 0 0 auto; padding: 0.9rem 1.1rem; }
-    .btn-undo:hover:not(:disabled) { border-color: var(--red); color: var(--red); }
-    .btn-pdf { background: var(--green); color: #0f0f13; width: 100%; font-size: 1rem; padding: 1rem; }
-    .btn-pdf:disabled { background: var(--border); color: var(--muted); }
-    #camera-input { display: none; }
-    #msg { text-align: center; font-size: 0.84rem; padding: 0.6rem 1rem; border-radius: 10px; display: none; }
-    #msg.error   { background: #2d1515; color: var(--red);   border: 1px solid var(--red);   display: block; }
-    #msg.success { background: #0d2515; color: var(--green); border: 1px solid var(--green); display: block; }
-    #msg.info    { background: var(--card); color: var(--muted); border: 1px solid var(--border); display: block; }
-    #done-screen { display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; flex: 1; padding: 2rem; gap: 1rem; }
-    .done-icon  { font-size: 3.5rem; }
-    .done-title { font-size: 1.3rem; font-weight: 700; color: var(--green); }
-    .done-sub   { color: var(--muted); font-size: 0.88rem; line-height: 1.6; max-width: 260px; }
-    .btn-again  { margin-top: 0.5rem; background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 10px; padding: 0.75rem 1.5rem; cursor: pointer; font-size: 0.88rem; font-weight: 600; }
-    .spinner { display: inline-block; width: 17px; height: 17px; border: 2.5px solid transparent; border-top-color: #0f0f13; border-radius: 50%; animation: spin 0.7s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    #invalid-screen { display: none; flex-direction: column; align-items: center; justify-content: center; flex: 1; text-align: center; padding: 2rem; gap: 0.8rem; color: var(--muted); }
+    :root { --accent:#a78bfa; --green:#4ade80; --red:#f87171; --bg:#0f0f13; --card:#1a1a24; --border:#2a2a3a; --muted:#8888aa; }
+    body { background:var(--bg); color:#fff; font-family:'Segoe UI',system-ui,sans-serif; min-height:100dvh; display:flex; flex-direction:column; }
+
+    header { padding:.9rem 1.2rem; background:var(--card); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+    .logo { font-weight:800; font-size:1.15rem; background:linear-gradient(135deg,#6ee7f7,#a78bfa); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+    .badge { background:var(--border); border-radius:20px; padding:.25rem .75rem; font-size:.8rem; color:var(--accent); font-weight:600; }
+
+    /* ── MAIN ── */
+    #main-screen { flex:1; display:flex; flex-direction:column; padding:1rem; gap:.9rem; overflow-y:auto; }
+    #preview-area { background:var(--card); border:2px dashed var(--border); border-radius:16px; min-height:180px; display:flex; align-items:center; justify-content:center; overflow:hidden; transition:border-color .2s; }
+    #preview-area.has { border-style:solid; border-color:var(--accent); }
+    #last-preview { width:100%; max-height:280px; object-fit:contain; border-radius:14px; display:none; }
+    .placeholder { text-align:center; color:var(--muted); font-size:.88rem; padding:1.5rem; }
+    .placeholder svg { width:48px; height:48px; margin-bottom:.6rem; opacity:.35; display:block; margin-inline:auto; }
+    #thumbs { display:flex; gap:8px; overflow-x:auto; min-height:66px; align-items:center; scrollbar-width:none; }
+    #thumbs::-webkit-scrollbar { display:none; }
+    .thumb { flex-shrink:0; width:58px; height:58px; border-radius:10px; object-fit:cover; border:2px solid var(--border); }
+    .thumb.on { border-color:var(--accent); }
+    .te { color:var(--muted); font-size:.8rem; }
+    .row { display:flex; gap:.7rem; }
+    .btn { flex:1; padding:.85rem; border:none; border-radius:14px; font-size:.93rem; font-weight:600; cursor:pointer; transition:all .18s; display:flex; align-items:center; justify-content:center; gap:6px; }
+    .btn:active { transform:scale(.96); }
+    .btn:disabled { opacity:.4; cursor:not-allowed; }
+    .btn-cam { background:linear-gradient(135deg,#6ee7f7,#a78bfa); color:#0f0f13; }
+    .btn-undo { background:var(--card); border:1px solid var(--border); color:var(--muted); flex:0 0 auto; padding:.85rem 1rem; }
+    .btn-pdf { background:var(--green); color:#0f0f13; width:100%; font-size:1rem; padding:.95rem; }
+    .btn-pdf:disabled { background:var(--border); color:var(--muted); }
+    #msg { text-align:center; font-size:.84rem; padding:.6rem 1rem; border-radius:10px; display:none; }
+    #msg.error   { background:#2d1515; color:var(--red);   border:1px solid var(--red);   display:block; }
+    #msg.success { background:#0d2515; color:var(--green); border:1px solid var(--green); display:block; }
+    #msg.info    { background:var(--card); color:var(--muted); border:1px solid var(--border); display:block; }
+
+    /* ── REVIEW ── */
+    #review-screen { display:none; position:fixed; inset:0; background:#000; flex-direction:column; z-index:100; }
+    #rv-top { display:flex; align-items:center; justify-content:space-between; padding:.7rem 1rem; background:rgba(0,0,0,.85); flex-shrink:0; }
+    #rv-hint { font-size:.8rem; color:var(--muted); text-align:center; flex:1; padding:0 .5rem; line-height:1.4; }
+    .rvbtn { background:var(--card); border:1px solid var(--border); color:#fff; border-radius:10px; padding:.45rem .85rem; font-size:.84rem; font-weight:600; cursor:pointer; flex-shrink:0; }
+    #btn-usar { background:var(--accent); border-color:var(--accent); color:#0f0f13; }
+    #cw { flex:1; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    #rv-canvas { max-width:100%; max-height:100%; display:block; touch-action:none; }
+    /* corner handles - fixed so they sit on top regardless of layout */
+    .ch { position:fixed; width:32px; height:32px; border-radius:50%; background:rgba(167,139,250,.88); border:3px solid #fff; transform:translate(-50%,-50%); touch-action:none; cursor:grab; z-index:200; box-shadow:0 0 0 5px rgba(167,139,250,.25); }
+    #rv-bot { padding:.7rem 1rem; background:rgba(0,0,0,.85); flex-shrink:0; }
+    #btn-skip { background:none; border:1px solid var(--border); color:var(--muted); border-radius:10px; padding:.6rem; font-size:.82rem; cursor:pointer; width:100%; }
+    #det-badge { font-size:.75rem; color:var(--accent); margin-top:.2rem; display:none; }
+
+    /* ── DONE / INVALID ── */
+    .fullscreen { display:none; position:fixed; inset:0; background:var(--bg); flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:2rem; gap:1rem; z-index:50; }
+    .done-icon { font-size:3.5rem; }
+    .done-title { font-size:1.3rem; font-weight:700; color:var(--green); }
+    .done-sub { color:var(--muted); font-size:.88rem; line-height:1.6; max-width:260px; }
+    .btn-again { background:none; border:1px solid var(--border); color:var(--muted); border-radius:10px; padding:.75rem 1.5rem; cursor:pointer; font-size:.88rem; font-weight:600; }
+
+    .sp { display:inline-block; width:15px; height:15px; border:2.5px solid transparent; border-top-color:currentColor; border-radius:50%; animation:spin .7s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
   </style>
 </head>
 <body>
 
 <header>
   <div class="logo">DocScan</div>
-  <div class="badge" id="count-badge">0 fotos</div>
+  <div class="badge" id="badge">0 fotos</div>
 </header>
 
-<main id="main-content">
+<!-- MAIN -->
+<main id="main-screen">
   <div id="preview-area">
-    <div class="placeholder" id="placeholder">
+    <div class="placeholder" id="ph">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
         <path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
         <circle cx="12" cy="13" r="3"/>
       </svg>
-      Toca <strong>Tomar foto</strong> para<br>capturar una pagina
+      Toca <strong>Tomar foto</strong><br>para capturar una pagina
     </div>
-    <img id="last-preview" alt="ultima foto">
+    <img id="last-preview" alt="">
   </div>
 
-  <div id="thumbs">
-    <span class="thumbs-empty" id="thumbs-empty">Las fotos apareceran aqui</span>
-  </div>
-
+  <div id="thumbs"><span class="te" id="te">Las fotos apareceran aqui</span></div>
   <div id="msg"></div>
 
-  <div class="btn-row">
-    <button class="btn btn-photo" onclick="takePhoto()">
-      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
-        <circle cx="12" cy="13" r="4"/>
-      </svg>
+  <div class="row">
+    <button class="btn btn-cam" onclick="takePhoto()">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
       Tomar foto
     </button>
     <button class="btn btn-undo" id="btn-undo" onclick="undoLast()" disabled>
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-        <polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 00-4-4H4"/>
-      </svg>
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 00-4-4H4"/></svg>
     </button>
   </div>
-
-  <button class="btn btn-pdf" id="btn-pdf" onclick="generatePDF()" disabled>
-    Generar PDF
-  </button>
+  <button class="btn btn-pdf" id="btn-pdf" onclick="generatePDF()" disabled>Generar PDF</button>
 </main>
 
-<!-- Pantalla de exito en el telefono -->
-<div id="done-screen">
+<!-- REVIEW -->
+<div id="review-screen">
+  <div id="rv-top">
+    <button class="rvbtn" onclick="cancelReview()">↩ Retomar</button>
+    <div>
+      <div id="rv-hint">Arrastra las esquinas al borde del documento</div>
+      <div id="det-badge"><span class="sp" style="color:var(--accent);width:10px;height:10px;border-width:1.5px"></span> Detectando...</div>
+    </div>
+    <button class="rvbtn" id="btn-usar" onclick="confirmReview()">✓ Usar</button>
+  </div>
+  <div id="cw">
+    <canvas id="rv-canvas"></canvas>
+    <div class="ch" id="ch0"></div>
+    <div class="ch" id="ch1"></div>
+    <div class="ch" id="ch2"></div>
+    <div class="ch" id="ch3"></div>
+  </div>
+  <div id="rv-bot">
+    <button id="btn-skip" onclick="skipCrop()">Subir sin recortar</button>
+  </div>
+</div>
+
+<!-- DONE -->
+<div class="fullscreen" id="done-screen">
   <div class="done-icon">📤</div>
   <div class="done-title">PDF Enviado</div>
-  <div class="done-sub">
-    El PDF fue generado y se esta descargando automaticamente en el computador.
-  </div>
+  <div class="done-sub">El PDF se esta descargando automaticamente en el computador.</div>
   <button class="btn-again" onclick="location.reload()">Escanear otro documento</button>
 </div>
 
-<!-- Sesion invalida -->
-<div id="invalid-screen">
+<!-- INVALID -->
+<div class="fullscreen" id="invalid-screen">
   <div style="font-size:2.5rem">⚠️</div>
   <div style="color:#fff;font-weight:700">QR expirado</div>
-  <div>Genera un nuevo QR desde el computador e intenta de nuevo.</div>
+  <div style="color:var(--muted)">Genera un nuevo QR desde el computador.</div>
 </div>
 
-<input type="file" id="camera-input" accept="image/*" capture="environment">
+<input type="file" id="cam-input" accept="image/*" capture="environment">
 
 <script>
-  const token = new URLSearchParams(location.search).get('t');
-  let photoCount = 0;
-  const localPreviews = []; // dataUrls for UI only
+'use strict';
 
-  // Validate session
-  (async () => {
-    if (!token) return showInvalid();
-    try {
-      const res = await fetch(`/api/session/${token}`);
-      if (!res.ok) showInvalid();
-    } catch {
-      showInvalid();
-    }
-  })();
+const token = new URLSearchParams(location.search).get('t');
+let photoCount = 0;
+const previews = [];   // local dataUrls for UI
+let origCanvas = null; // full-res canvas for transform
+let corners = [];      // [{x,y}] in IMAGE space
+let cvReady = false;
 
-  function showInvalid() {
-    document.getElementById('main-content').style.display = 'none';
-    document.getElementById('invalid-screen').style.display = 'flex';
-  }
+// ── OpenCV (lazy, background) ─────────────────────────────────────────────────
+window.Module = { onRuntimeInitialized() { cvReady = true; } };
+(function() {
+  const s = document.createElement('script');
+  s.async = true;
+  s.src = 'https://docs.opencv.org/4.x/opencv.js';
+  document.head.appendChild(s);
+})();
 
-  function showMsg(text, type) {
-    const el = document.getElementById('msg');
-    el.textContent = text;
-    el.className = type;
-    if (type === 'success') setTimeout(() => { el.style.display = 'none'; }, 2500);
-  }
+// ── Session check ─────────────────────────────────────────────────────────────
+(async () => {
+  if (!token) return show('invalid');
+  try { if (!(await fetch(`/api/session/${token}`)).ok) show('invalid'); }
+  catch { show('invalid'); }
+})();
 
-  function updateUI() {
-    const n = photoCount;
-    document.getElementById('count-badge').textContent = `${n} foto${n !== 1 ? 's' : ''}`;
-    document.getElementById('btn-undo').disabled = n === 0;
-    document.getElementById('btn-pdf').disabled = n === 0;
-    document.getElementById('thumbs-empty').style.display = n === 0 ? '' : 'none';
-  }
-
-  function takePhoto() {
-    document.getElementById('camera-input').click();
-  }
-
-  async function compressToBlob(file) {
-    return new Promise((resolve) => {
-      const img = new Image();
-      const url = URL.createObjectURL(file);
-      img.onload = () => {
-        const MAX = 1920;
-        let { width, height } = img;
-        if (width > MAX || height > MAX) {
-          if (width >= height) { height = Math.round(height * MAX / width); width = MAX; }
-          else                 { width = Math.round(width * MAX / height); height = MAX; }
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = width; canvas.height = height;
-        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-        URL.revokeObjectURL(url);
-        canvas.toBlob(blob => resolve({ blob, dataUrl: canvas.toDataURL('image/jpeg', 0.78) }), 'image/jpeg', 0.78);
-      };
-      img.src = url;
-    });
-  }
-
-  document.getElementById('camera-input').addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    e.target.value = '';
-
-    showMsg('Subiendo foto...', 'info');
-
-    const { blob, dataUrl } = await compressToBlob(file);
-
-    // Show preview immediately
-    localPreviews.push(dataUrl);
-    addThumb(dataUrl);
-    showPreview(dataUrl);
-
-    // Upload to server
-    const form = new FormData();
-    form.append('photo', blob, 'photo.jpg');
-
-    try {
-      const res = await fetch(`/api/upload/${token}`, { method: 'POST', body: form });
-      const data = await res.json();
-      if (data.ok) {
-        photoCount = data.count;
-        updateUI();
-        showMsg('Foto agregada', 'success');
-      } else {
-        showMsg(data.error || 'Error al subir', 'error');
-        localPreviews.pop();
-        removeLasThumb();
-      }
-    } catch {
-      showMsg('Error de conexion', 'error');
-      localPreviews.pop();
-      removeLasThumb();
-    }
+// ── Screens ───────────────────────────────────────────────────────────────────
+function show(name) {
+  ['main-screen','review-screen','done-screen','invalid-screen'].forEach(id => {
+    const el = document.getElementById(id);
+    const isTarget = id.startsWith(name);
+    el.style.display = isTarget ? (id === 'main-screen' ? 'flex' : id === 'review-screen' ? 'flex' : 'flex') : 'none';
   });
+}
+show('main');
 
-  function addThumb(dataUrl) {
-    const thumbs = document.getElementById('thumbs');
-    thumbs.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
-    const img = document.createElement('img');
-    img.src = dataUrl;
-    img.className = 'thumb active';
-    thumbs.appendChild(img);
-    thumbs.scrollLeft = thumbs.scrollWidth;
+// ── UI helpers ────────────────────────────────────────────────────────────────
+function msg(text, type) {
+  const el = document.getElementById('msg');
+  el.textContent = text; el.className = type;
+  if (type === 'success') setTimeout(() => el.style.display='none', 2500);
+}
+function updateUI() {
+  document.getElementById('badge').textContent = `${photoCount} foto${photoCount!==1?'s':''}`;
+  document.getElementById('btn-undo').disabled = photoCount === 0;
+  document.getElementById('btn-pdf').disabled  = photoCount === 0;
+  document.getElementById('te').style.display  = photoCount === 0 ? '' : 'none';
+}
+function addThumb(url) {
+  const t = document.getElementById('thumbs');
+  t.querySelectorAll('.thumb').forEach(x=>x.classList.remove('on'));
+  const i = document.createElement('img');
+  i.src=url; i.className='thumb on'; t.appendChild(i);
+  t.scrollLeft = t.scrollWidth;
+}
+function removeLastThumb() {
+  const last = document.getElementById('thumbs').querySelector('.thumb:last-child');
+  if (last) last.remove();
+}
+function setPreview(url) {
+  document.getElementById('ph').style.display = 'none';
+  const p = document.getElementById('last-preview');
+  p.src=url; p.style.display='block';
+  document.getElementById('preview-area').classList.add('has');
+}
+
+// ── Camera ────────────────────────────────────────────────────────────────────
+function takePhoto() { document.getElementById('cam-input').click(); }
+
+document.getElementById('cam-input').addEventListener('change', async e => {
+  const file = e.target.files[0]; if (!file) return;
+  e.target.value = '';
+  msg('Procesando...','info');
+  origCanvas = await fileToCanvas(file, 1920);
+  await openReview();
+});
+
+async function fileToCanvas(file, max) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const s = Math.min(1, max/Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width=Math.round(img.width*s); c.height=Math.round(img.height*s);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      URL.revokeObjectURL(img.src); resolve(c);
+    };
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+// ── Review ────────────────────────────────────────────────────────────────────
+async function openReview() {
+  // Default corners: 8% inset
+  const iw=origCanvas.width, ih=origCanvas.height;
+  const mx=iw*.08, my=ih*.08;
+  corners = [{x:mx,y:my},{x:iw-mx,y:my},{x:iw-mx,y:ih-my},{x:mx,y:ih-my}];
+
+  show('review');
+  await new Promise(r=>requestAnimationFrame(r));
+
+  drawReview();
+  placeHandles();
+  setupDrag();
+
+  // Try auto-detect
+  if (cvReady) {
+    autoDetect();
+  } else {
+    document.getElementById('det-badge').style.display='block';
+    let t=0;
+    const id = setInterval(()=>{
+      t+=300;
+      if (cvReady) { clearInterval(id); autoDetect(); }
+      else if (t>10000) { clearInterval(id); document.getElementById('det-badge').style.display='none'; }
+    },300);
   }
+}
 
-  function removeLasThumb() {
-    const thumbs = document.getElementById('thumbs');
-    const last = thumbs.querySelector('.thumb:last-child');
-    if (last) last.remove();
+function drawReview() {
+  const wrap=document.getElementById('cw');
+  const canvas=document.getElementById('rv-canvas');
+  const maxW=wrap.clientWidth, maxH=wrap.clientHeight;
+  const iw=origCanvas.width, ih=origCanvas.height;
+  const scale=Math.min(maxW/iw, maxH/ih);
+  canvas.width=Math.round(iw*scale); canvas.height=Math.round(ih*scale);
+  const ctx=canvas.getContext('2d');
+  ctx.drawImage(origCanvas,0,0,canvas.width,canvas.height);
+  drawQuad(ctx, canvas.width, canvas.height);
+}
+
+function drawQuad(ctx, dw, dh) {
+  const iw=origCanvas.width, ih=origCanvas.height;
+  const pts=corners.map(p=>({x:p.x*(dw/iw), y:p.y*(dh/ih)}));
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x,pts[0].y);
+  pts.forEach((p,i)=>{ if(i>0) ctx.lineTo(p.x,p.y); });
+  ctx.closePath();
+  ctx.fillStyle='rgba(167,139,250,.13)';   ctx.fill();
+  ctx.strokeStyle='rgba(167,139,250,.9)';  ctx.lineWidth=2.5; ctx.stroke();
+}
+
+function placeHandles() {
+  const canvas=document.getElementById('rv-canvas');
+  const r=canvas.getBoundingClientRect();
+  const iw=origCanvas.width, ih=origCanvas.height;
+  corners.forEach((c,i)=>{
+    const el=document.getElementById(`ch${i}`);
+    el.style.left=(r.left + c.x*(r.width/iw))+'px';
+    el.style.top =(r.top  + c.y*(r.height/ih))+'px';
+  });
+}
+
+function setupDrag() {
+  let active=-1;
+  function pos(e){ const t=e.touches?e.touches[0]:e; return {x:t.clientX,y:t.clientY}; }
+  for(let i=0;i<4;i++){
+    const el=document.getElementById(`ch${i}`);
+    el.addEventListener('touchstart',e=>{e.preventDefault();active=i;},{passive:false});
+    el.addEventListener('mousedown', e=>{active=i;});
   }
-
-  function showPreview(dataUrl) {
-    document.getElementById('placeholder').style.display = 'none';
-    const preview = document.getElementById('last-preview');
-    preview.src = dataUrl;
-    preview.style.display = 'block';
-    document.getElementById('preview-area').classList.add('has-photo');
+  function move(e){
+    if(active<0) return;
+    if(e.cancelable) e.preventDefault();
+    const p=pos(e);
+    const canvas=document.getElementById('rv-canvas');
+    const r=canvas.getBoundingClientRect();
+    const iw=origCanvas.width, ih=origCanvas.height;
+    corners[active]={
+      x:Math.max(0,Math.min(iw,(p.x-r.left)*(iw/r.width))),
+      y:Math.max(0,Math.min(ih,(p.y-r.top)*(ih/r.height)))
+    };
+    const el=document.getElementById(`ch${active}`);
+    el.style.left=p.x+'px'; el.style.top=p.y+'px';
+    const ctx=canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(origCanvas,0,0,canvas.width,canvas.height);
+    drawQuad(ctx, canvas.width, canvas.height);
   }
+  document.addEventListener('touchmove',move,{passive:false});
+  document.addEventListener('mousemove',move);
+  document.addEventListener('touchend', ()=>{ active=-1; });
+  document.addEventListener('mouseup',  ()=>{ active=-1; });
+}
 
-  async function undoLast() {
-    document.getElementById('btn-undo').disabled = true;
+// ── OpenCV detection ──────────────────────────────────────────────────────────
+function autoDetect() {
+  document.getElementById('det-badge').style.display='block';
+  requestAnimationFrame(()=>{
     try {
-      const res = await fetch(`/api/upload/${token}/last`, { method: 'DELETE' });
-      const data = await res.json();
-      if (data.ok) {
-        photoCount = data.count;
-        localPreviews.pop();
-        removeLasThumb();
+      const pts=detectCV(origCanvas);
+      if(pts){ corners=pts; drawReview(); placeHandles(); document.getElementById('rv-hint').textContent='Documento detectado — ajusta si es necesario'; }
+    } catch(e){ console.warn('CV:',e); }
+    document.getElementById('det-badge').style.display='none';
+  });
+}
 
-        if (photoCount === 0) {
-          document.getElementById('last-preview').style.display = 'none';
-          document.getElementById('placeholder').style.display = '';
-          document.getElementById('preview-area').classList.remove('has-photo');
-        } else {
-          showPreview(localPreviews[localPreviews.length - 1]);
-          const all = document.getElementById('thumbs').querySelectorAll('.thumb');
-          all.forEach(t => t.classList.remove('active'));
-          all[all.length - 1]?.classList.add('active');
-        }
-        updateUI();
-        showMsg('Ultima foto eliminada', 'info');
-      }
-    } catch {
-      showMsg('Error al eliminar', 'error');
+function detectCV(canvas) {
+  const src=cv.imread(canvas), gray=new cv.Mat(), blur=new cv.Mat(),
+        edges=new cv.Mat(), k=cv.getStructuringElement(cv.MORPH_RECT,new cv.Size(3,3)),
+        ctrs=new cv.MatVector(), hier=new cv.Mat();
+  cv.cvtColor(src,gray,cv.COLOR_RGBA2GRAY);
+  cv.GaussianBlur(gray,blur,new cv.Size(5,5),0);
+  cv.Canny(blur,edges,75,200);
+  cv.dilate(edges,edges,k);
+  cv.findContours(edges,ctrs,hier,cv.RETR_EXTERNAL,cv.CHAIN_APPROX_SIMPLE);
+  const minA=canvas.width*canvas.height*.1;
+  let best=null,bestA=0;
+  for(let i=0;i<ctrs.size();i++){
+    const c=ctrs.get(i), area=cv.contourArea(c);
+    if(area<minA){c.delete();continue;}
+    const peri=cv.arcLength(c,true), approx=new cv.Mat();
+    cv.approxPolyDP(c,approx,.02*peri,true);
+    if(approx.rows===4&&area>bestA){if(best)best.delete();best=approx;bestA=area;}
+    else approx.delete();
+    c.delete();
+  }
+  let result=null;
+  if(best){
+    result=[];
+    for(let i=0;i<4;i++) result.push({x:best.data32S[i*2],y:best.data32S[i*2+1]});
+    best.delete();
+  }
+  [src,gray,blur,edges,k,ctrs,hier].forEach(m=>m.delete());
+  return result;
+}
+
+// ── Perspective transform ─────────────────────────────────────────────────────
+function sortCorners(pts) {
+  const s=pts.map(p=>p.x+p.y), d=pts.map(p=>p.x-p.y);
+  return [pts[s.indexOf(Math.min(...s))],pts[d.indexOf(Math.max(...d))],
+          pts[s.indexOf(Math.max(...s))],pts[d.indexOf(Math.min(...d))]];
+}
+
+function warp(src, pts) {
+  const [tl,tr,br,bl]=sortCorners(pts);
+  const outW=Math.round(Math.max(Math.hypot(tr.x-tl.x,tr.y-tl.y),Math.hypot(br.x-bl.x,br.y-bl.y)));
+  const outH=Math.round(Math.max(Math.hypot(bl.x-tl.x,bl.y-tl.y),Math.hypot(br.x-tr.x,br.y-tr.y)));
+  if(cvReady) return warpCV(src,tl,tr,br,bl,outW,outH);
+  return warpJS(src,tl,tr,br,bl,outW,outH);
+}
+
+function warpCV(src,tl,tr,br,bl,W,H) {
+  const sm=cv.imread(src), dm=new cv.Mat();
+  const sp=cv.matFromArray(4,1,cv.CV_32FC2,[tl.x,tl.y,tr.x,tr.y,br.x,br.y,bl.x,bl.y]);
+  const dp=cv.matFromArray(4,1,cv.CV_32FC2,[0,0,W,0,W,H,0,H]);
+  const M=cv.getPerspectiveTransform(sp,dp);
+  cv.warpPerspective(sm,dm,M,new cv.Size(W,H));
+  const out=document.createElement('canvas'); out.width=W; out.height=H;
+  cv.imshow(out,dm);
+  [sm,dm,sp,dp,M].forEach(m=>m.delete());
+  return out;
+}
+
+function warpJS(src,tl,tr,br,bl,W,H) {
+  // Scale source for performance
+  const max=1100, sc=Math.min(1,max/Math.max(src.width,src.height));
+  const ws=document.createElement('canvas');
+  ws.width=Math.round(src.width*sc); ws.height=Math.round(src.height*sc);
+  ws.getContext('2d').drawImage(src,0,0,ws.width,ws.height);
+  const tls={x:tl.x*sc,y:tl.y*sc},trs={x:tr.x*sc,y:tr.y*sc};
+  const brs={x:br.x*sc,y:br.y*sc},bls={x:bl.x*sc,y:bl.y*sc};
+  const Ws=Math.round(W*sc), Hs=Math.round(H*sc);
+  // Inverse homography: dst→src
+  const h=gaussElim(
+    [[0,0,1,0,0,0,0,0],[0,0,0,0,0,1,0,0],
+     [Ws,0,1,0,0,0,-trs.x*Ws,0],[0,0,0,Ws,0,1,-trs.y*Ws,0],
+     [Ws,Hs,1,0,0,0,-brs.x*Ws,-brs.x*Hs],[0,0,0,Ws,Hs,1,-brs.y*Ws,-brs.y*Hs],
+     [0,Hs,1,0,0,0,0,-bls.x*Hs],[0,0,0,0,Hs,1,0,-bls.y*Hs]],
+    [tls.x,tls.y,trs.x,trs.y,brs.x,brs.y,bls.x,bls.y]
+  );
+  const sCtx=ws.getContext('2d'), sD=sCtx.getImageData(0,0,ws.width,ws.height);
+  const out=document.createElement('canvas'); out.width=Ws; out.height=Hs;
+  const oCtx=out.getContext('2d'), oD=oCtx.createImageData(Ws,Hs);
+  const sw=ws.width, s=sD.data, d=oD.data;
+  for(let dy=0;dy<Hs;dy++){
+    for(let dx=0;dx<Ws;dx++){
+      const w=h[6]*dx+h[7]*dy+1;
+      const sx=(h[0]*dx+h[1]*dy+h[2])/w, sy=(h[3]*dx+h[4]*dy+h[5])/w;
+      if(sx<0||sx>=sw-1||sy<0||sy>=ws.height-1) continue;
+      const x0=sx|0,y0=sy|0,fx=sx-x0,fy=sy-y0;
+      const i00=(y0*sw+x0)*4,i10=(y0*sw+x0+1)*4,i01=((y0+1)*sw+x0)*4,i11=((y0+1)*sw+x0+1)*4;
+      const oi=(dy*Ws+dx)*4,a=(1-fx)*(1-fy),b=fx*(1-fy),c=(1-fx)*fy,dd=fx*fy;
+      for(let ch=0;ch<3;ch++) d[oi+ch]=s[i00+ch]*a+s[i10+ch]*b+s[i01+ch]*c+s[i11+ch]*dd;
+      d[oi+3]=255;
     }
   }
+  oCtx.putImageData(oD,0,0); return out;
+}
 
-  async function generatePDF() {
-    const btn = document.getElementById('btn-pdf');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> Generando...';
+function gaussElim(A,bv){
+  const n=bv.length,M=A.map((r,i)=>[...r,bv[i]]);
+  for(let col=0;col<n;col++){
+    let mx=col;
+    for(let r=col+1;r<n;r++) if(Math.abs(M[r][col])>Math.abs(M[mx][col])) mx=r;
+    [M[col],M[mx]]=[M[mx],M[col]];
+    for(let r=col+1;r<n;r++){
+      if(!M[col][col]) continue;
+      const f=M[r][col]/M[col][col];
+      for(let k=col;k<=n;k++) M[r][k]-=f*M[col][k];
+    }
+  }
+  const x=new Array(n).fill(0);
+  for(let i=n-1;i>=0;i--){
+    if(!M[i][i]) continue;
+    x[i]=M[i][n]/M[i][i];
+    for(let k=i-1;k>=0;k--) M[k][n]-=M[k][i]*x[i];
+  }
+  return x;
+}
 
-    try {
-      const res = await fetch(`/api/pdf/${token}`, { method: 'POST' });
-      const data = await res.json();
+// ── Review actions ────────────────────────────────────────────────────────────
+function cancelReview() { origCanvas=null; show('main'); }
 
-      if (data.ok) {
-        document.getElementById('main-content').style.display = 'none';
-        document.getElementById('done-screen').style.display = 'flex';
+async function confirmReview() {
+  const btn=document.getElementById('btn-usar');
+  btn.disabled=true; btn.innerHTML='<span class="sp" style="color:#0f0f13"></span>';
+  try {
+    const warped=warp(origCanvas,[...corners]);
+    const blob=await new Promise(r=>warped.toBlob(r,'image/jpeg',.82));
+    await upload(blob, warped.toDataURL('image/jpeg',.35));
+  } catch(e) {
+    console.error(e); btn.disabled=false; btn.textContent='✓ Usar';
+  }
+}
+
+async function skipCrop() {
+  document.getElementById('btn-skip').disabled=true;
+  const blob=await new Promise(r=>origCanvas.toBlob(r,'image/jpeg',.82));
+  await upload(blob, origCanvas.toDataURL('image/jpeg',.3));
+}
+
+async function upload(blob, thumbUrl) {
+  const form=new FormData(); form.append('photo',blob,'photo.jpg');
+  try {
+    const res=await fetch(`/api/upload/${token}`,{method:'POST',body:form});
+    const data=await res.json();
+    if(data.ok){
+      photoCount=data.count; previews.push(thumbUrl);
+      addThumb(thumbUrl); setPreview(thumbUrl); updateUI();
+      msg('Foto agregada','success');
+      origCanvas=null; show('main');
+    } else { msg(data.error||'Error al subir','error'); }
+  } catch { msg('Error de conexion','error'); }
+}
+
+// ── Undo ──────────────────────────────────────────────────────────────────────
+async function undoLast() {
+  document.getElementById('btn-undo').disabled=true;
+  try {
+    const res=await fetch(`/api/upload/${token}/last`,{method:'DELETE'});
+    const data=await res.json();
+    if(data.ok){
+      photoCount=data.count; previews.pop(); removeLastThumb();
+      if(photoCount===0){
+        document.getElementById('last-preview').style.display='none';
+        document.getElementById('ph').style.display='';
+        document.getElementById('preview-area').classList.remove('has');
       } else {
-        showMsg(data.error || 'Error generando PDF', 'error');
-        btn.disabled = false;
-        btn.textContent = 'Generar PDF';
+        setPreview(previews[previews.length-1]);
+        const all=document.getElementById('thumbs').querySelectorAll('.thumb');
+        all.forEach(t=>t.classList.remove('on')); all[all.length-1]?.classList.add('on');
       }
-    } catch {
-      showMsg('Error de conexion', 'error');
-      btn.disabled = false;
-      btn.textContent = 'Generar PDF';
+      updateUI(); msg('Ultima foto eliminada','info');
     }
-  }
+  } catch { msg('Error al eliminar','error'); }
+}
 
-  updateUI();
+// ── Generate PDF ──────────────────────────────────────────────────────────────
+async function generatePDF() {
+  const btn=document.getElementById('btn-pdf');
+  btn.disabled=true; btn.innerHTML='<span class="sp" style="color:#0f0f13"></span> Generando...';
+  try {
+    const res=await fetch(`/api/pdf/${token}`,{method:'POST'});
+    const data=await res.json();
+    if(data.ok){ show('done'); }
+    else { msg(data.error||'Error generando PDF','error'); btn.disabled=false; btn.textContent='Generar PDF'; }
+  } catch { msg('Error de conexion','error'); btn.disabled=false; btn.textContent='Generar PDF'; }
+}
+
+updateUI();
 </script>
-
 </body>
 </html>

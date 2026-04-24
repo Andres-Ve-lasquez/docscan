@@ -102,6 +102,21 @@
       transition: all 0.2s;
     }
     .btn-new:hover { border-color: #a78bfa; color: #a78bfa; }
+    .btn-direct {
+      margin-top: 1.5rem;
+      background: none;
+      border: 1px solid #2a2a3a;
+      color: #8888aa;
+      border-radius: 12px;
+      padding: .7rem 1.6rem;
+      cursor: pointer;
+      font-size: .9rem;
+      font-weight: 600;
+      transition: all .2s;
+      width: 100%;
+    }
+    .btn-direct:hover { border-color: #6ee7f7; color: #6ee7f7; }
+    .or-sep { color: #3a3a52; font-size: .78rem; margin-top: 1.4rem; letter-spacing: .08em; text-transform: uppercase; }
     #pdf-banner {
       display: none;
       margin-top: 1rem;
@@ -137,6 +152,9 @@
 
     <div id="pdf-banner">✅ PDF descargado en tu computador</div>
     <button class="btn-new" onclick="init()">Nuevo escaneo</button>
+
+    <div class="or-sep">— o —</div>
+    <button class="btn-direct" onclick="goDirectScan()">📱 Escanear en este dispositivo</button>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -198,6 +216,15 @@
         document.getElementById('pdf-banner').style.display = 'block';
         if (es) { es.close(); es = null; }
       }
+    }
+
+    async function goDirectScan() {
+      const btn = document.querySelector('.btn-direct');
+      btn.disabled = true; btn.textContent = 'Abriendo...';
+      try {
+        const { token: t } = await fetch('/api/session').then(r => r.json());
+        location.href = `/scan?t=${t}&direct=1`;
+      } catch { btn.disabled = false; btn.textContent = '📱 Escanear en este dispositivo'; }
     }
 
     init();

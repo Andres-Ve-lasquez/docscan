@@ -141,6 +141,7 @@
 'use strict';
 
 const token = new URLSearchParams(location.search).get('t');
+const directMode = new URLSearchParams(location.search).get('direct') === '1';
 let photoCount = 0;
 const previews = [];   // local dataUrls for UI
 let origCanvas = null; // full-res canvas for transform
@@ -343,31 +344,53 @@ function autoDetect() {
 
 function detectCV(canvas) {
   const src=cv.imread(canvas), gray=new cv.Mat(), blur=new cv.Mat(),
-        edges=new cv.Mat(), k=cv.getStructuringElement(cv.MORPH_RECT,new cv.Size(3,3)),
-        ctrs=new cv.MatVector(), hier=new cv.Mat();
+        edges=new cv.Mat(), k=cv.getStructuringElement(cv.MORPH_RECT,new cv.Size(3,3));
   cv.cvtColor(src,gray,cv.COLOR_RGBA2GRAY);
   cv.GaussianBlur(gray,blur,new cv.Size(5,5),0);
-  cv.Canny(blur,edges,75,200);
-  cv.dilate(edges,edges,k);
-  cv.findContours(edges,ctrs,hier,cv.RETR_EXTERNAL,cv.CHAIN_APPROX_SIMPLE);
-  const minA=canvas.width*canvas.height*.1;
-  let best=null,bestA=0;
-  for(let i=0;i<ctrs.size();i++){
-    const c=ctrs.get(i), area=cv.contourArea(c);
-    if(area<minA){c.delete();continue;}
-    const peri=cv.arcLength(c,true), approx=new cv.Mat();
-    cv.approxPolyDP(c,approx,.02*peri,true);
-    if(approx.rows===4&&area>bestA){if(best)best.delete();best=approx;bestA=area;}
-    else approx.delete();
-    c.delete();
-  }
+
+  // Progressive: start strict, relax if nothing found
+  const configs=[
+    {lo:75, hi:200, minFrac:.10, eps:[.02]},
+    {lo:50, hi:150, minFrac:.05, eps:[.02,.04]},
+    {lo:30, hi:100, minFrac:.03, eps:[.02,.04,.06]},
+  ];
+  const imgArea=canvas.width*canvas.height;
   let result=null;
-  if(best){
-    result=[];
-    for(let i=0;i<4;i++) result.push({x:best.data32S[i*2],y:best.data32S[i*2+1]});
-    best.delete();
+
+  for(const cfg of configs){
+    if(result) break;
+    cv.Canny(blur,edges,cfg.lo,cfg.hi);
+    cv.dilate(edges,edges,k);
+    const ctrs=new cv.MatVector(), hier=new cv.Mat();
+    cv.findContours(edges,ctrs,hier,cv.RETR_EXTERNAL,cv.CHAIN_APPROX_SIMPLE);
+    hier.delete();
+    const minA=imgArea*cfg.minFrac;
+    let best=null, bestA=0;
+    for(let i=0;i<ctrs.size();i++){
+      const c=ctrs.get(i), area=cv.contourArea(c);
+      if(area>=minA){
+        // convexHull helps with wrinkled/folded paper borders
+        const hull=new cv.Mat();
+        cv.convexHull(c,hull);
+        const peri=cv.arcLength(hull,true);
+        for(const ep of cfg.eps){
+          const approx=new cv.Mat();
+          cv.approxPolyDP(hull,approx,ep*peri,true);
+          if(approx.rows===4&&area>bestA){ if(best)best.delete(); best=approx; bestA=area; break; }
+          approx.delete();
+        }
+        hull.delete();
+      }
+      c.delete();
+    }
+    ctrs.delete();
+    if(best){
+      result=[];
+      for(let i=0;i<4;i++) result.push({x:best.data32S[i*2],y:best.data32S[i*2+1]});
+      best.delete();
+    }
   }
-  [src,gray,blur,edges,k,ctrs,hier].forEach(m=>m.delete());
+  [src,gray,blur,edges,k].forEach(m=>m.delete());
   return result;
 }
 
@@ -522,8 +545,10 @@ async function generatePDF() {
   try {
     const res=await fetch(`/api/pdf/${token}`,{method:'POST'});
     const data=await res.json();
-    if(data.ok){ show('done'); }
-    else { msg(data.error||'Error generando PDF','error'); btn.disabled=false; btn.textContent='Generar PDF'; }
+    if(data.ok){
+      if(directMode){ location.href=`/api/download/${token}`; }
+      else { show('done'); }
+    } else { msg(data.error||'Error generando PDF','error'); btn.disabled=false; btn.textContent='Generar PDF'; }
   } catch { msg('Error de conexion','error'); btn.disabled=false; btn.textContent='Generar PDF'; }
 }
 

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>DocScan - Camara</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --accent: #a78bfa;
+      --green:  #4ade80;
+      --red:    #f87171;
+      --bg:     #0f0f13;
+      --card:   #1a1a24;
+      --border: #2a2a3a;
+      --muted:  #8888aa;
+    }
+    body { background: var(--bg); color: #fff; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100dvh; display: flex; flex-direction: column; }
+    header { padding: 0.9rem 1.2rem; background: var(--card); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-weight: 800; font-size: 1.15rem; background: linear-gradient(135deg, #6ee7f7, #a78bfa); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .badge { background: var(--border); border-radius: 20px; padding: 0.25rem 0.75rem; font-size: 0.8rem; color: var(--accent); font-weight: 600; }
+    main { flex: 1; display: flex; flex-direction: column; padding: 1rem; gap: 0.9rem; overflow-y: auto; }
+    #preview-area { background: var(--card); border: 2px dashed var(--border); border-radius: 16px; min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; transition: border-color 0.2s; }
+    #preview-area.has-photo { border-style: solid; border-color: var(--accent); }
+    #last-preview { width: 100%; max-height: 300px; object-fit: contain; border-radius: 14px; display: none; }
+    .placeholder { text-align: center; color: var(--muted); font-size: 0.88rem; padding: 2rem; }
+    .placeholder svg { width: 52px; height: 52px; margin-bottom: 0.75rem; opacity: 0.35; display: block; margin-inline: auto; }
+    #thumbs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; min-height: 70px; align-items: center; scrollbar-width: none; }
+    #thumbs::-webkit-scrollbar { display: none; }
+    .thumb { flex-shrink: 0; width: 62px; height: 62px; border-radius: 10px; object-fit: cover; border: 2px solid var(--border); transition: border-color 0.2s; }
+    .thumb.active { border-color: var(--accent); }
+    .thumbs-empty { color: var(--muted); font-size: 0.8rem; }
+    .btn-row { display: flex; gap: 0.7rem; }
+    .btn { flex: 1; padding: 0.9rem; border: none; border-radius: 14px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.18s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn:active { transform: scale(0.96); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-photo { background: linear-gradient(135deg, #6ee7f7, #a78bfa); color: #0f0f13; }
+    .btn-undo { background: var(--card); border: 1px solid var(--border); color: var(--muted); flex: 0 0 auto; padding: 0.9rem 1.1rem; }
+    .btn-undo:hover:not(:disabled) { border-color: var(--red); color: var(--red); }
+    .btn-pdf { background: var(--green); color: #0f0f13; width: 100%; font-size: 1rem; padding: 1rem; }
+    .btn-pdf:disabled { background: var(--border); color: var(--muted); }
+    #camera-input { display: none; }
+    #msg { text-align: center; font-size: 0.84rem; padding: 0.6rem 1rem; border-radius: 10px; display: none; }
+    #msg.error   { background: #2d1515; color: var(--red);   border: 1px solid var(--red);   display: block; }
+    #msg.success { background: #0d2515; color: var(--green); border: 1px solid var(--green); display: block; }
+    #msg.info    { background: var(--card); color: var(--muted); border: 1px solid var(--border); display: block; }
+    #done-screen { display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; flex: 1; padding: 2rem; gap: 1rem; }
+    .done-icon  { font-size: 3.5rem; }
+    .done-title { font-size: 1.3rem; font-weight: 700; color: var(--green); }
+    .done-sub   { color: var(--muted); font-size: 0.88rem; line-height: 1.6; max-width: 260px; }
+    .btn-again  { margin-top: 0.5rem; background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 10px; padding: 0.75rem 1.5rem; cursor: pointer; font-size: 0.88rem; font-weight: 600; }
+    .spinner { display: inline-block; width: 17px; height: 17px; border: 2.5px solid transparent; border-top-color: #0f0f13; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #invalid-screen { display: none; flex-direction: column; align-items: center; justify-content: center; flex: 1; text-align: center; padding: 2rem; gap: 0.8rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">DocScan</div>
+  <div class="badge" id="count-badge">0 fotos</div>
+</header>
+
+<main id="main-content">
+  <div id="preview-area">
+    <div class="placeholder" id="placeholder">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+        <circle cx="12" cy="13" r="3"/>
+      </svg>
+      Toca <strong>Tomar foto</strong> para<br>capturar una pagina
+    </div>
+    <img id="last-preview" alt="ultima foto">
+  </div>
+
+  <div id="thumbs">
+    <span class="thumbs-empty" id="thumbs-empty">Las fotos apareceran aqui</span>
+  </div>
+
+  <div id="msg"></div>
+
+  <div class="btn-row">
+    <button class="btn btn-photo" onclick="takePhoto()">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+      Tomar foto
+    </button>
+    <button class="btn btn-undo" id="btn-undo" onclick="undoLast()" disabled>
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 00-4-4H4"/>
+      </svg>
+    </button>
+  </div>
+
+  <button class="btn btn-pdf" id="btn-pdf" onclick="generatePDF()" disabled>
+    Generar PDF
+  </button>
+</main>
+
+<!-- Pantalla de exito en el telefono -->
+<div id="done-screen">
+  <div class="done-icon">📤</div>
+  <div class="done-title">PDF Enviado</div>
+  <div class="done-sub">
+    El PDF fue generado y se esta descargando automaticamente en el computador.
+  </div>
+  <button class="btn-again" onclick="location.reload()">Escanear otro documento</button>
+</div>
+
+<!-- Sesion invalida -->
+<div id="invalid-screen">
+  <div style="font-size:2.5rem">⚠️</div>
+  <div style="color:#fff;font-weight:700">QR expirado</div>
+  <div>Genera un nuevo QR desde el computador e intenta de nuevo.</div>
+</div>
+
+<input type="file" id="camera-input" accept="image/*" capture="environment">
+
+<script>
+  const token = new URLSearchParams(location.search).get('t');
+  let photoCount = 0;
+  const localPreviews = []; // dataUrls for UI only
+
+  // Validate session
+  (async () => {
+    if (!token) return showInvalid();
+    try {
+      const res = await fetch(`/api/session/${token}`);
+      if (!res.ok) showInvalid();
+    } catch {
+      showInvalid();
+    }
+  })();
+
+  function showInvalid() {
+    document.getElementById('main-content').style.display = 'none';
+    document.getElementById('invalid-screen').style.display = 'flex';
+  }
+
+  function showMsg(text, type) {
+    const el = document.getElementById('msg');
+    el.textContent = text;
+    el.className = type;
+    if (type === 'success') setTimeout(() => { el.style.display = 'none'; }, 2500);
+  }
+
+  function updateUI() {
+    const n = photoCount;
+    document.getElementById('count-badge').textContent = `${n} foto${n !== 1 ? 's' : ''}`;
+    document.getElementById('btn-undo').disabled = n === 0;
+    document.getElementById('btn-pdf').disabled = n === 0;
+    document.getElementById('thumbs-empty').style.display = n === 0 ? '' : 'none';
+  }
+
+  function takePhoto() {
+    document.getElementById('camera-input').click();
+  }
+
+  async function compressToBlob(file) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const MAX = 1920;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          if (width >= height) { height = Math.round(height * MAX / width); width = MAX; }
+          else                 { width = Math.round(width * MAX / height); height = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(blob => resolve({ blob, dataUrl: canvas.toDataURL('image/jpeg', 0.78) }), 'image/jpeg', 0.78);
+      };
+      img.src = url;
+    });
+  }
+
+  document.getElementById('camera-input').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = '';
+
+    showMsg('Subiendo foto...', 'info');
+
+    const { blob, dataUrl } = await compressToBlob(file);
+
+    // Show preview immediately
+    localPreviews.push(dataUrl);
+    addThumb(dataUrl);
+    showPreview(dataUrl);
+
+    // Upload to server
+    const form = new FormData();
+    form.append('photo', blob, 'photo.jpg');
+
+    try {
+      const res = await fetch(`/api/upload/${token}`, { method: 'POST', body: form });
+      const data = await res.json();
+      if (data.ok) {
+        photoCount = data.count;
+        updateUI();
+        showMsg('Foto agregada', 'success');
+      } else {
+        showMsg(data.error || 'Error al subir', 'error');
+        localPreviews.pop();
+        removeLasThumb();
+      }
+    } catch {
+      showMsg('Error de conexion', 'error');
+      localPreviews.pop();
+      removeLasThumb();
+    }
+  });
+
+  function addThumb(dataUrl) {
+    const thumbs = document.getElementById('thumbs');
+    thumbs.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+    const img = document.createElement('img');
+    img.src = dataUrl;
+    img.className = 'thumb active';
+    thumbs.appendChild(img);
+    thumbs.scrollLeft = thumbs.scrollWidth;
+  }
+
+  function removeLasThumb() {
+    const thumbs = document.getElementById('thumbs');
+    const last = thumbs.querySelector('.thumb:last-child');
+    if (last) last.remove();
+  }
+
+  function showPreview(dataUrl) {
+    document.getElementById('placeholder').style.display = 'none';
+    const preview = document.getElementById('last-preview');
+    preview.src = dataUrl;
+    preview.style.display = 'block';
+    document.getElementById('preview-area').classList.add('has-photo');
+  }
+
+  async function undoLast() {
+    document.getElementById('btn-undo').disabled = true;
+    try {
+      const res = await fetch(`/api/upload/${token}/last`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.ok) {
+        photoCount = data.count;
+        localPreviews.pop();
+        removeLasThumb();
+
+        if (photoCount === 0) {
+          document.getElementById('last-preview').style.display = 'none';
+          document.getElementById('placeholder').style.display = '';
+          document.getElementById('preview-area').classList.remove('has-photo');
+        } else {
+          showPreview(localPreviews[localPreviews.length - 1]);
+          const all = document.getElementById('thumbs').querySelectorAll('.thumb');
+          all.forEach(t => t.classList.remove('active'));
+          all[all.length - 1]?.classList.add('active');
+        }
+        updateUI();
+        showMsg('Ultima foto eliminada', 'info');
+      }
+    } catch {
+      showMsg('Error al eliminar', 'error');
+    }
+  }
+
+  async function generatePDF() {
+    const btn = document.getElementById('btn-pdf');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Generando...';
+
+    try {
+      const res = await fetch(`/api/pdf/${token}`, { method: 'POST' });
+      const data = await res.json();
+
+      if (data.ok) {
+        document.getElementById('main-content').style.display = 'none';
+        document.getElementById('done-screen').style.display = 'flex';
+      } else {
+        showMsg(data.error || 'Error generando PDF', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Generar PDF';
+      }
+    } catch {
+      showMsg('Error de conexion', 'error');
+      btn.disabled = false;
+      btn.textContent = 'Generar PDF';
+    }
+  }
+
+  updateUI();
+</script>
+
+</body>
+</html>

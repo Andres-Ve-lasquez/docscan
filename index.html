@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DocScan</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: #0f0f13;
+      color: #fff;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .logo {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 0.4rem;
+      background: linear-gradient(135deg, #6ee7f7, #a78bfa);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle { color: #8888aa; font-size: 0.95rem; margin-bottom: 2.5rem; }
+    .card {
+      background: #1a1a24;
+      border: 1px solid #2a2a3a;
+      border-radius: 20px;
+      padding: 2.5rem;
+      text-align: center;
+      max-width: 420px;
+      width: 100%;
+    }
+    .qr-wrap {
+      background: #fff;
+      border-radius: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+      margin-bottom: 1.5rem;
+      width: 268px;
+      height: 268px;
+    }
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      text-align: left;
+      margin-bottom: 0.6rem;
+      color: #8888aa;
+      font-size: 0.88rem;
+    }
+    .step-num {
+      background: #2a2a3a;
+      border-radius: 50%;
+      width: 22px; height: 22px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      color: #a78bfa;
+      font-weight: 700;
+    }
+    .divider { border: none; border-top: 1px solid #2a2a3a; margin: 1.5rem 0; }
+    .status-bar {
+      background: #12121a;
+      border: 1px solid #2a2a3a;
+      border-radius: 10px;
+      padding: 0.8rem 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #2a2a3a;
+      display: inline-block;
+      margin-right: 8px;
+      transition: background 0.3s;
+    }
+    .dot.active { background: #4ade80; box-shadow: 0 0 8px #4ade80; }
+    .count { color: #6ee7f7; font-weight: 700; font-size: 1rem; }
+    .btn-new {
+      margin-top: 1.2rem;
+      background: none;
+      border: 1px solid #2a2a3a;
+      color: #8888aa;
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      font-size: 0.82rem;
+      transition: all 0.2s;
+    }
+    .btn-new:hover { border-color: #a78bfa; color: #a78bfa; }
+    #pdf-banner {
+      display: none;
+      margin-top: 1rem;
+      background: #0d2515;
+      border: 1px solid #4ade80;
+      border-radius: 10px;
+      padding: 0.9rem 1rem;
+      font-size: 0.85rem;
+      color: #4ade80;
+    }
+  </style>
+</head>
+<body>
+  <div class="logo">DocScan</div>
+  <div class="subtitle">Escanea documentos con tu telefono</div>
+
+  <div class="card">
+    <div class="qr-wrap">
+      <div id="qr"></div>
+    </div>
+
+    <div class="step"><div class="step-num">1</div><span>Escanea el QR con la camara de tu telefono</span></div>
+    <div class="step"><div class="step-num">2</div><span>Toma fotos de cada pagina del documento</span></div>
+    <div class="step"><div class="step-num">3</div><span>Presiona <strong style="color:#a78bfa">Generar PDF</strong> en tu telefono</span></div>
+    <div class="step"><div class="step-num">4</div><span>El PDF se descarga <strong style="color:#6ee7f7">automaticamente aqui</strong></span></div>
+
+    <hr class="divider">
+
+    <div class="status-bar">
+      <div><span class="dot" id="dot"></span><span id="status-txt" style="color:#8888aa">Esperando telefono...</span></div>
+      <div class="count"><span id="img-count">0</span> fotos</div>
+    </div>
+
+    <div id="pdf-banner">✅ PDF descargado en tu computador</div>
+    <button class="btn-new" onclick="init()">Nuevo escaneo</button>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    let token = null;
+    let es    = null;
+
+    async function init() {
+      // Reset UI
+      document.getElementById('dot').className = 'dot';
+      document.getElementById('status-txt').textContent = 'Esperando telefono...';
+      document.getElementById('img-count').textContent = '0';
+      document.getElementById('pdf-banner').style.display = 'none';
+      document.getElementById('qr').innerHTML = '';
+
+      if (es) { es.close(); es = null; }
+
+      // Create session
+      const { token: t } = await fetch('/api/session').then(r => r.json());
+      token = t;
+
+      // Generate QR pointing to /scan?t=TOKEN
+      const scanUrl = `${location.origin}/scan?t=${token}`;
+      new QRCode(document.getElementById('qr'), {
+        text: scanUrl,
+        width: 240, height: 240,
+        colorDark: '#000000', colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+
+      // Listen for real-time events via SSE
+      es = new EventSource(`/api/events/${token}`);
+      es.onmessage = handleEvent;
+    }
+
+    function handleEvent(e) {
+      const data = JSON.parse(e.data);
+
+      if (data.type === 'count') {
+        document.getElementById('img-count').textContent = data.count;
+        if (data.count > 0) {
+          document.getElementById('dot').className = 'dot active';
+          document.getElementById('status-txt').textContent = 'Telefono conectado';
+        }
+      }
+
+      if (data.type === 'pdf_ready') {
+        document.getElementById('status-txt').textContent = 'PDF generado — descargando...';
+        document.getElementById('img-count').textContent = data.pages + ' pags';
+
+        // Trigger automatic download in this (computer) browser
+        const a = document.createElement('a');
+        a.href = `/api/download/${data.token}`;
+        a.download = '';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        document.getElementById('pdf-banner').style.display = 'block';
+        if (es) { es.close(); es = null; }
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

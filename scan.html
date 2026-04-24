@@ -230,6 +230,13 @@ async function fileToCanvas(file, max) {
 
 // ── Review ────────────────────────────────────────────────────────────────────
 async function openReview() {
+  // Reset review buttons (pueden quedar en estado cargando de la foto anterior)
+  const btnUsar = document.getElementById('btn-usar');
+  btnUsar.disabled = false;
+  btnUsar.textContent = '✓ Usar';
+  document.getElementById('btn-skip').disabled = false;
+  document.getElementById('rv-hint').textContent = 'Arrastra las esquinas al borde del documento';
+
   // Default corners: 8% inset
   const iw=origCanvas.width, ih=origCanvas.height;
   const mx=iw*.08, my=ih*.08;
